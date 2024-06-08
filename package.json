@@ -1,0 +1,21 @@
+{
+  "name": "q-midpass-ru-autoconfirm",
+  "module": "index.ts",
+  "type": "module",
+  "author": "Viktor Shchelochkov <hi@hloth.dev> (https://hloth.dev)",
+  "scripts": {
+    "start": "bun --env-file=config.conf index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "puppeteer": "^22.10.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-recaptcha": "^3.6.8",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
