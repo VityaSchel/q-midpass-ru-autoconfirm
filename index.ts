@@ -10,7 +10,6 @@ puppeteer.use(StealthPlugin())
 puppeteer.use(RecaptchaPlugin({ provider: { id: '2captcha', token: rucaptchaKey }, visualFeedback: true }))
 
 async function rucaptchaRequest<T>(endpoint: string, body: Record<string, any>): Promise<T> {
-  console.log(endpoint, JSON.stringify(body).length)
   return await fetch('https://api.rucaptcha.com/' + endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -49,6 +48,7 @@ await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWe
 await page.setViewport({ width: 941, height: 704 })
 await page.goto('https://q.midpass.ru/')
 
+let authorized = false
 for(let attempts = 0; attempts < 3; attempts++) {
   await (await page.waitForSelector('div.register_form:has(input#CountryId) > select'))?.select('88655495-3b8c-f56d-5337-0f2743a7bfed')
   await (await page.waitForSelector('div.register_form:has(input#ServiceProviderId) > select'))?.select('b8af6319-9d8d-5bd9-f896-edb8b97362d0')
@@ -70,8 +70,12 @@ for(let attempts = 0; attempts < 3; attempts++) {
     continue
   }
   await page.$eval('input#Captcha', (el: HTMLInputElement, solution: string) => el.value = solution, authCaptcha.solution)
+  
+  await new Promise(resolve => setTimeout(resolve, 100))
+  console.log('click')
 
   await (await page.waitForSelector('button[onclick="javascript:LogOn();"]'))?.click()
+  console.log('clicked')
   await page.waitForNavigation()
   const isCaptchaError = await page.evaluate(() => {
     const captchaErrorElement = document.querySelector('#captchaError')
@@ -82,9 +86,11 @@ for(let attempts = 0; attempts < 3; attempts++) {
     await rucaptchaRequest('reportIncorrect', { taskId: authCaptcha.taskId })
   } else {
     await rucaptchaRequest('reportCorrect', { taskId: authCaptcha.taskId })
+    authorized = true
     break
   }
 }
+if (!authorized) throw new Error('Не удалось авторизоваться')
 
 const isBanPage = await page.evaluate(() => window.location.pathname.endsWith('Account/BanPage'))
 if (isBanPage) {
@@ -94,10 +100,15 @@ if (isBanPage) {
 
 await page.goto('https://q.midpass.ru/ru/Appointments/WaitingList')
 const checkbox = await page.waitForSelector('.datagrid-body input[type=checkbox]') as import('puppeteer').ElementHandle<HTMLInputElement>
-checkbox.click()
-const confirm = await page.waitForSelector('a#confirmAppointments') as import('puppeteer').ElementHandle<HTMLAnchorElement>
-confirm.click()
 await new Promise(resolve => setTimeout(resolve, 100))
+checkbox.click()
+await new Promise(resolve => setTimeout(resolve, 100))
+const confirm = await page.waitForSelector('a#confirmAppointments') as import('puppeteer').ElementHandle<HTMLAnchorElement>
+await new Promise(resolve => setTimeout(resolve, 100))
+confirm.click()
+await new Promise(resolve => setTimeout(resolve, 1000))
+
+let confirmed
 for(let attempts = 0; attempts < 3; attempts++) {
   const confirmCaptchaBase64 = await page.evaluate(() => {
     const captcha = document.querySelector('img#imgCaptcha') as HTMLImageElement
@@ -117,6 +128,9 @@ for(let attempts = 0; attempts < 3; attempts++) {
       continue
     }
     await page.$eval('input#captchaValue', (el: HTMLInputElement, solution: string) => el.value = solution, confirmCaptcha.solution)
+    
+    await page.$eval('.dialog-button a', (el: HTMLAnchorElement) => el.click())
+
     const isCaptchaError = await new Promise(resolve => {
       const interval = setInterval(() => {
         page.evaluate(() => {
@@ -140,8 +154,11 @@ for(let attempts = 0; attempts < 3; attempts++) {
       await rucaptchaRequest('reportIncorrect', { taskId: confirmCaptcha.taskId })
     } else {
       await rucaptchaRequest('reportCorrect', { taskId: confirmCaptcha.taskId })
+      confirmed = true
+      await page.waitForSelector('.datagrid-body [field=PlaceInQueueString]')
+      await page.$eval('.datagrid-body td[field=PlaceInQueueString]', (el: HTMLTableCellElement) => console.log(el.textContent))
       break
     }
-    await page.$eval('.dialog-button > a', (el: HTMLAnchorElement) => el.click())
   }
 }
+if (!confirmed) throw new Error('Не удалось подтвердить заявку')
