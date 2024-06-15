@@ -128,24 +128,27 @@ for(let attempts = 0; attempts < 3; attempts++) {
       continue
     }
     await page.$eval('input#captchaValue', (el: HTMLInputElement, solution: string) => el.value = solution, confirmCaptcha.solution)
-    
+    await new Promise(resolve => setTimeout(resolve, 100))
     await page.$eval('.dialog-button a', (el: HTMLAnchorElement) => el.click())
 
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
     const isCaptchaError = await new Promise(resolve => {
-      const interval = setInterval(() => {
-        page.evaluate(() => {
+      const interval = setInterval(async () => {
+        const text = await page.evaluate(() => {
           const responseElement = document.querySelector('.messager-window > div > div')
-          if (!responseElement || !responseElement.textContent || !responseElement.textContent.trim()) return
-          clearInterval(interval)
-          const text = responseElement.textContent.trim()
-          if (text === 'Не заполнено "Символы с картинки"') {
-            resolve(true)
-          } else if (text === 'Заявка подтверждена.') {
-            resolve(false)
-          } else {
-            throw new Error('Неизвестный текст в ответе: ' + text)
-          }
+          if (!responseElement || !responseElement.textContent || !responseElement.textContent.trim()) return null
+          return responseElement.textContent.trim()
         })
+        if(text === null) return
+        clearInterval(interval)
+        if (text === 'Не заполнено "Символы с картинки"') {
+          resolve(true)
+        } else if (text === 'Заявка подтверждена.') {
+          resolve(false)
+        } else {
+          throw new Error('Неизвестный текст в ответе: ' + text)
+        }
       }, 300)
     })
     if (isCaptchaError) {
@@ -156,9 +159,10 @@ for(let attempts = 0; attempts < 3; attempts++) {
       await rucaptchaRequest('reportCorrect', { taskId: confirmCaptcha.taskId })
       confirmed = true
       await page.waitForSelector('.datagrid-body [field=PlaceInQueueString]')
-      await page.$eval('.datagrid-body td[field=PlaceInQueueString]', (el: HTMLTableCellElement) => console.log(el.textContent))
+      console.log('Место', await page.$eval('.datagrid-body td[field=PlaceInQueueString]', (el: HTMLTableCellElement) => el.textContent))
       break
     }
   }
 }
 if (!confirmed) throw new Error('Не удалось подтвердить заявку')
+await page.close()
