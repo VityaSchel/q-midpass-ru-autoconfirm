@@ -42,7 +42,7 @@ async function solveCaptcha(base64: string): Promise<{ taskId: number, solution:
   return { solution: solution.text, taskId }
 }
 
-const browser = await puppeteer.launch({ headless: false })
+const browser = await puppeteer.launch({ headless: true })
 const page = await browser.newPage()
 await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
 await page.setViewport({ width: 941, height: 704 })
