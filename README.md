@@ -4,6 +4,9 @@
 
 Мой скрипт написан на JS и puppeteer и хорош тем, что вам нужно посмотреть всего один файл, чтобы удостовериться, что он не наносит никакого вреда. Вообще весь код в одном маленьком файле. simply run index.ts.
 
+> [!IMPORTANT]
+> Я ищу работу! Если вы заинтересованы в моем найме, посетите [cv.hloth.dev](https://cv.hloth.dev), чтобы просмотреть мои резюме и CV.
+
 ## Запуск
 
 1. Первый раз пишем `curl -fsSL https://bun.sh/install | bash`, затем `git clone https://github.com/VityaSchel/q-midpass-ru-autoconfirm && bun install` и вставляем API ключ от [https://rucaptcha.ru/](https://rucaptcha.ru/) и почту и пароль от q.midpass.ru в файле **config.conf**
