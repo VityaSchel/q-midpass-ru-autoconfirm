@@ -5,6 +5,8 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 const email = process.env.EMAIL || (() => { throw new Error('Вставьте EMAIL в config.conf') })()
 const password = process.env.PASSWORD || (() => { throw new Error('Вставьте PASSWORD в config.conf') })()
 const rucaptchaKey = process.env.RUCAPTCHA_KEY || (() => { throw new Error('Вставьте RUCAPTCHA_KEY в config.conf') })()
+const country = process.env.COUNTRY || (() => { throw new Error('Вставьте код страны (COUNTRY) в config.conf') })()
+const location = process.env.LOCATION || (() => { throw new Error('Вставьте код учреждения (LOCATION) в config.conf') })()
 
 puppeteer.use(StealthPlugin())
 puppeteer.use(RecaptchaPlugin({ provider: { id: '2captcha', token: rucaptchaKey }, visualFeedback: true }))
@@ -50,8 +52,8 @@ await page.goto('https://q.midpass.ru/')
 
 let authorized = false
 for(let attempts = 0; attempts < 3; attempts++) {
-  await (await page.waitForSelector('div.register_form:has(input#CountryId) > select'))?.select('88655495-3b8c-f56d-5337-0f2743a7bfed')
-  await (await page.waitForSelector('div.register_form:has(input#ServiceProviderId) > select'))?.select('b8af6319-9d8d-5bd9-f896-edb8b97362d0')
+  await (await page.waitForSelector('div.register_form:has(input#CountryId) > select'))?.select(country)
+  await (await page.waitForSelector('div.register_form:has(input#ServiceProviderId) > select'))?.select(location)
   await page.$eval('input#Email', (el: HTMLInputElement, email) => el.value = email, email)
   await page.$eval('input#Password', (el: HTMLInputElement, password) => el.value = password, password)
 
